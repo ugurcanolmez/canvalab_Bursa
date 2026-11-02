@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Bursa YEĞİTEK - BTSO Eğitim Vadisi Canva Sınıfı rezervasyon ve doluluk takvimi">
+  <meta name="theme-color" content="#1e3a8a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Canva Sınıfı">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <title>Canva Sınıfı Rezervasyon | BTSO Eğitim Vadisi</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <style>
+    body { -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
+    header { padding-top: env(safe-area-inset-top); }
+    .alt-guvenli { padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)); }
+    button, a { touch-action: manipulation; }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+
+  <!-- Üst başlık -->
+  <header class="bg-blue-900 text-white shadow">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p class="text-xs sm:text-sm text-blue-200 font-medium">Bursa İl Millî Eğitim Müdürlüğü YEĞİTEK Birimi</p>
+        <h1 class="text-lg sm:text-2xl font-bold leading-tight">BTSO Eğitim Vadisi - Canva Sınıfı Rezervasyon Sistemi</h1>
+      </div>
+      <button id="yoneticiBtn" type="button"
+        class="self-start sm:self-auto shrink-0 inline-flex items-center gap-2 rounded-lg border border-blue-300/40 bg-blue-800 px-3 py-2 text-sm font-medium hover:bg-blue-700">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        <span id="yoneticiBtnYazi">Yönetici İşlemi</span>
+      </button>
+    </div>
+  </header>
+
+  <div id="demoUyari" class="hidden bg-amber-100 border-b border-amber-300 text-amber-900 text-sm">
+    <div class="max-w-7xl mx-auto px-4 py-2">
+      <strong>Demo modu:</strong> Sayfa henüz Google tablosuna bağlanmadı. Kayıtlar yalnızca bu tarayıcıda tutulur, diğer cihazlarla paylaşılmaz. (Demo PIN: 1234)
+    </div>
+  </div>
+
+  <div id="yoneticiBant" class="hidden bg-indigo-50 border-b border-indigo-200">
+    <div class="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center gap-2 justify-between text-sm">
+      <span class="font-semibold text-indigo-900">Yönetici modu açık. Dolu saatlerde iletişim bilgileri ve "İptal Et" butonu görünür.</span>
+      <div class="flex gap-2">
+        <button id="csvBtn" type="button" class="rounded-md bg-emerald-600 px-3 py-1.5 font-medium text-white hover:bg-emerald-700">Excel (CSV) İndir</button>
+        <button id="cikisBtn" type="button" class="rounded-md bg-white border border-indigo-300 px-3 py-1.5 font-medium text-indigo-900 hover:bg-indigo-100">Çıkış</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="max-w-7xl mx-auto px-4 py-5 pb-32">
+
+    <!-- Bilgi ve açıklama -->
+    <div class="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
+      <span class="inline-flex items-center gap-1.5"><span class="h-3 w-3 rounded-sm border-2 border-emerald-500 bg-emerald-50"></span>Müsait</span>
+      <span class="inline-flex items-center gap-1.5"><span class="h-3 w-3 rounded-sm bg-blue-600"></span>Seçili</span>
+      <span class="inline-flex items-center gap-1.5"><span class="h-3 w-3 rounded-sm border-2 border-red-400 bg-red-100"></span>Dolu</span>
+      <span class="inline-flex items-center gap-1.5"><span class="h-3 w-3 rounded-sm bg-slate-200"></span>Geçmiş / Kapalı</span>
+      <span class="sm:ml-auto">Sınıf kapasitesi: <strong id="kapasiteYazi">-</strong> kişi</span>
+    </div>
+
+    <!-- Hafta gezinme -->
+    <div class="mb-4 flex items-center justify-between gap-2 rounded-xl bg-white p-2 shadow-sm">
+      <button id="oncekiBtn" type="button" class="rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Önceki hafta">&larr;<span class="hidden sm:inline"> Önceki hafta</span></button>
+      <div class="text-center">
+        <div id="haftaYazi" class="font-semibold text-slate-900">Yükleniyor...</div>
+        <button id="buHaftaBtn" type="button" class="text-xs text-blue-700 hover:underline">Bu haftaya dön</button>
+      </div>
+      <button id="sonrakiBtn" type="button" class="rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Sonraki hafta"><span class="hidden sm:inline">Sonraki hafta </span>&rarr;</button>
+    </div>
+
+    <!-- Mobil gün sekmeleri -->
+    <div id="gunSekmeleri" class="mb-4 grid grid-cols-5 gap-1.5 md:hidden"></div>
+
+    <!-- Takvim -->
+    <div id="takvim" class="grid grid-cols-1 gap-4 md:grid-cols-5 md:gap-3"></div>
+
+    <div id="yukleniyor" class="flex justify-center py-16">
+      <svg class="h-8 w-8 spin text-blue-700" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+    </div>
+
+    <p class="mt-6 text-center text-xs text-slate-500">
+      Birden fazla ardışık saat bloğunu tek seferde seçebilirsiniz. Ekran her 30 saniyede bir otomatik güncellenir.<br>
+      Telefon numaranız yalnızca yönetici tarafından görülür, genel ekranda gösterilmez.
+    </p>
+  </main>
+
+  <!-- Alt seçim çubuğu -->
+  <div id="secimCubugu" class="fixed inset-x-0 bottom-0 z-30 hidden border-t border-slate-200 bg-white/95 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] backdrop-blur">
+    <div class="alt-guvenli max-w-7xl mx-auto px-4 pt-3 flex items-center gap-3">
+      <div class="min-w-0 flex-1">
+        <div class="text-xs text-slate-500">Seçiminiz</div>
+        <div id="secimYazi" class="truncate font-semibold text-slate-900"></div>
+      </div>
+      <button id="temizleBtn" type="button" class="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100">Temizle</button>
+      <button id="devamBtn" type="button" class="rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">Rezervasyon Yap</button>
+    </div>
+  </div>
+
+  <!-- Kayıt formu -->
+  <div id="formModal" class="fixed inset-0 z-40 hidden items-end justify-center bg-slate-900/50 sm:items-center sm:p-4">
+    <div class="max-h-[95vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-xl sm:max-w-lg sm:rounded-2xl">
+      <form id="kayitFormu" novalidate>
+        <div class="border-b border-slate-200 px-5 py-4">
+          <h2 class="text-lg font-bold text-slate-900">Rezervasyon Bilgileri</h2>
+          <p id="formOzet" class="mt-1 text-sm font-medium text-blue-800"></p>
+        </div>
+        <div class="space-y-4 px-5 py-4">
+          <div>
+            <label for="fAd" class="mb-1 block text-sm font-medium">Ad Soyad <span class="text-red-600">*</span></label>
+            <input id="fAd" name="ad" type="text" required maxlength="80" autocomplete="name" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200">
+          </div>
+          <div>
+            <label for="fKurum" class="mb-1 block text-sm font-medium">Okul / Kurum Adı <span class="text-red-600">*</span></label>
+            <input id="fKurum" name="kurum" type="text" required maxlength="150" autocomplete="organization" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200">
+          </div>
+          <div>
+            <label for="fTelefon" class="mb-1 block text-sm font-medium">Telefon Numarası <span class="text-red-600">*</span></label>
+            <input id="fTelefon" name="telefon" type="tel" required maxlength="20" inputmode="tel" autocomplete="tel" placeholder="05xx xxx xx xx" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200">
+            <p class="mt-1 text-xs text-slate-500">Yalnızca yönetici görür, genel ekranda gösterilmez.</p>
+          </div>
+          <div>
+            <label for="fAmac" class="mb-1 block text-sm font-medium">Kullanım Amacı / Eğitim Konusu <span class="text-red-600">*</span></label>
+            <textarea id="fAmac" name="amac" rows="2" required maxlength="300" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"></textarea>
+          </div>
+          <div>
+            <label for="fKatilimci" class="mb-1 block text-sm font-medium">Katılımcı Sayısı <span class="text-red-600">*</span></label>
+            <input id="fKatilimci" name="katilimci" type="number" required min="1" step="1" inputmode="numeric" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200">
+            <p id="kapasiteNot" class="mt-1 text-xs text-slate-500"></p>
+          </div>
+          <div id="formHata" class="hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"></div>
+        </div>
+        <div class="flex gap-2 border-t border-slate-200 px-5 py-4">
+          <button type="button" id="formIptalBtn" class="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 font-medium hover:bg-slate-50">Vazgeç</button>
+          <button type="submit" id="formGonderBtn" class="flex-1 rounded-lg bg-blue-700 px-4 py-2.5 font-semibold text-white hover:bg-blue-800 disabled:opacity-60">Rezervasyonu Onayla</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PIN girişi -->
+  <div id="pinModal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/50 p-4">
+    <form id="pinFormu" class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl" novalidate>
+      <h2 class="text-lg font-bold">Yönetici İşlemi</h2>
+      <p class="mt-1 text-sm text-slate-600">Rezervasyonları iptal etmek ve kayıtları indirmek için yönetici PIN kodunu girin.</p>
+      <input id="pinGirdi" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN kodu"
+        class="mt-4 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-center text-lg tracking-widest focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200">
+      <div id="pinHata" class="mt-2 hidden text-sm text-red-600"></div>
+      <div class="mt-4 flex gap-2">
+        <button type="button" id="pinIptalBtn" class="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 font-medium hover:bg-slate-50">Vazgeç</button>
+        <button type="submit" id="pinGonderBtn" class="flex-1 rounded-lg bg-blue-700 px-4 py-2.5 font-semibold text-white hover:bg-blue-800 disabled:opacity-60">Giriş</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Bilgi / onay penceresi -->
+  <div id="bilgiModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
+    <div class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
+      <div id="bilgiIkon" class="mb-3"></div>
+      <h2 id="bilgiBaslik" class="text-lg font-bold"></h2>
+      <div id="bilgiMetin" class="mt-2 text-sm text-slate-600"></div>
+      <div class="mt-5 flex gap-2">
+        <button type="button" id="bilgiIkinciBtn" class="hidden flex-1 rounded-lg border border-slate-300 px-4 py-2.5 font-medium hover:bg-slate-50">Vazgeç</button>
+        <button type="button" id="bilgiTamamBtn" class="flex-1 rounded-lg bg-blue-700 px-4 py-2.5 font-semibold text-white hover:bg-blue-800">Tamam</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kısa bildirim -->
+  <div id="bildirim" class="pointer-events-none fixed inset-x-0 top-4 z-[60] hidden justify-center px-4">
+    <div id="bildirimMetin" class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm text-white shadow-lg"></div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  var GUN_ADLARI = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
+  var GUN_KISA = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum'];
+  var AY_ADLARI = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+  var YENILEME_MS = 30000;
+
+  var durum = {
+    veri: null,
+    pazartesi: '',
+    seciliGun: 0,
+    secim: { tarih: null, saatler: [] },
+    pin: null,
+    yukleniyor: false,
+    ilkYukleme: true
+  };
+
+  /* ---------------- Sunucu bağlantısı ---------------- */
+
+  /* =====================================================================
+   * GOOGLE APPS SCRIPT ADRESİ
+   * Apps Script'i "Web uygulaması" olarak dağıttıktan sonra verilen
+   * https://script.google.com/macros/s/.../exec linkini tırnakların
+   * arasına yapıştırın. Boş kalırsa sayfa demo modunda çalışır.
+   * ===================================================================== */
+  var API_URL = '';
+
+  var DEMO = !API_URL;
+
+  function sunucu(fonksiyon) {
+    var argumanlar = Array.prototype.slice.call(arguments, 1);
+    if (!DEMO) {
+      return fetch(API_URL, {
+        method: 'POST',
+        // text/plain: tarayıcı ön kontrol (CORS preflight) isteği göndermez
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ islem: fonksiyon, args: argumanlar })
+      })
+        .then(function (yanit) {
+          if (!yanit.ok) throw new Error('Sunucu yanıt vermedi (' + yanit.status + ')');
+          return yanit.json();
+        })
+        .then(function (cevap) {
+          if (!cevap.basari) throw new Error(cevap.hata || 'Bilinmeyen hata');
+          return cevap.veri;
+        });
+    }
+    return new Promise(function (coz, reddet) {
+      setTimeout(function () {
+        try { coz(demoSunucu[fonksiyon].apply(null, argumanlar)); } catch (e) { reddet(e); }
+      }, 250);
+    });
+  }
+
+  /* ---------------- Yardımcılar ---------------- */
+
+  function $(id) { return document.getElementById(id); }
+
+  function kacis(metin) {
+    return String(metin === undefined || metin === null ? '' : metin)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function tarihParcala(metin) {
+    var p = metin.split('-');
+    return { yil: Number(p[0]), ay: Number(p[1]), gun: Number(p[2]) };
+  }
+
+  function tarihUzun(metin, gunIndeksi) {
+    var t = tarihParcala(metin);
+    return t.gun + ' ' + AY_ADLARI[t.ay - 1] + ' ' + t.yil + (gunIndeksi !== undefined ? ' ' + GUN_ADLARI[gunIndeksi] : '');
+  }
+
+  function tarihKisa(metin) {
+    var t = tarihParcala(metin);
+    return t.gun + ' ' + AY_ADLARI[t.ay - 1].substring(0, 3);
+  }
+
+  function gunEkle(metin, n) {
+    var t = tarihParcala(metin);
+    var d = new Date(Date.UTC(t.yil, t.ay - 1, t.gun + n));
+    return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
+  }
+
+  function baslangic(saat) { return saat.split('-')[0]; }
+  function bitis(saat) { return saat.split('-')[1]; }
+
+  function secimAraligi(saatler) {
+    if (!saatler.length) return '';
+    return baslangic(saatler[0]) + ' - ' + bitis(saatler[saatler.length - 1]);
+  }
+
+  function slotDurumu(tarih, saat) {
+    var v = durum.veri;
+    var kayit = v.kayitlar[tarih + '|' + saat];
+    if (kayit) return { tur: 'dolu', kayit: kayit };
+    if (tarih < v.bugun || (tarih === v.bugun && baslangic(saat) <= v.simdiSaat)) return { tur: 'gecmis' };
+    if (tarih > v.sonTarih) return { tur: 'kapali' };
+    if (durum.secim.tarih === tarih && durum.secim.saatler.indexOf(saat) >= 0) return { tur: 'secili' };
+    return { tur: 'musait' };
+  }
+
+  var bildirimZamanlayici = null;
+  function bildir(metin) {
+    $('bildirimMetin').textContent = metin;
+    $('bildirim').classList.remove('hidden');
+    $('bildirim').classList.add('flex');
+    clearTimeout(bildirimZamanlayici);
+    bildirimZamanlayici = setTimeout(function () {
+      $('bildirim').classList.add('hidden');
+      $('bildirim').classList.remove('flex');
+    }, 3500);
+  }
+
+  function modalAc(id) { $(id).classList.remove('hidden'); $(id).classList.add('flex'); }
+  function modalKapat(id) { $(id).classList.add('hidden'); $(id).classList.remove('flex'); }
+  function modalAcikMi() {
+    return ['formModal', 'pinModal', 'bilgiModal'].some(function (id) { return !$(id).classList.contains('hidden'); });
+  }
+
+  var IKONLAR = {
+    basari: '<div class="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100"><svg class="h-6 w-6 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>',
+    hata: '<div class="flex h-12 w-12 items-center justify-center rounded-full bg-red-100"><svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg></div>',
+    soru: '<div class="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100"><svg class="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>'
+  };
+
+  var bilgiOnay = null;
+  function bilgiGoster(secenek) {
+    $('bilgiIkon').innerHTML = IKONLAR[secenek.ikon || 'basari'];
+    $('bilgiBaslik').textContent = secenek.baslik;
+    $('bilgiMetin').innerHTML = secenek.metinHtml || kacis(secenek.metin || '');
+    $('bilgiTamamBtn').textContent = secenek.tamamYazi || 'Tamam';
+    $('bilgiTamamBtn').className = 'flex-1 rounded-lg px-4 py-2.5 font-semibold text-white ' +
+      (secenek.tehlikeli ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-700 hover:bg-blue-800');
+    $('bilgiIkinciBtn').classList.toggle('hidden', !secenek.onay);
+    bilgiOnay = secenek.onay || null;
+    modalAc('bilgiModal');
+  }
+
+  /* ---------------- Veri yükleme ---------------- */
+
+  function yukle(pazartesi, sessiz) {
+    if (durum.yukleniyor) return Promise.resolve();
+    durum.yukleniyor = true;
+    if (!sessiz) {
+      $('yukleniyor').classList.remove('hidden');
+      $('takvim').classList.add('opacity-50');
+    }
+    return sunucu('haftayiGetir', pazartesi || '', durum.pin || '')
+      .then(function (veri) {
+        var haftaDegisti = veri.pazartesi !== durum.pazartesi;
+        durum.veri = veri;
+        durum.pazartesi = veri.pazartesi;
+
+        if (durum.pin && !veri.yonetici) {
+          durum.pin = null;
+          bildir('Yönetici oturumu kapandı. Lütfen tekrar giriş yapın.');
+        }
+
+        if (haftaDegisti) {
+          var bugunIndeksi = veri.gunler.indexOf(veri.bugun);
+          durum.seciliGun = bugunIndeksi >= 0 ? bugunIndeksi : 0;
+        }
+
+        secimiDogrula();
+        ciz();
+      })
+      .catch(function (hata) {
+        bildir('Veriler alınamadı: ' + (hata && hata.message ? hata.message : hata));
+      })
+      .then(function () {
+        durum.yukleniyor = false;
+        $('yukleniyor').classList.add('hidden');
+        $('takvim').classList.remove('opacity-50');
+      });
+  }
+
+  /* Yenilemeden sonra seçili bir saat dolduysa / geçtiyse seçimi düzelt. */
+  function secimiDogrula() {
+    var s = durum.secim;
+    if (!s.tarih) return;
+    if (durum.veri.gunler.indexOf(s.tarih) < 0) return;
+    var gecerli = s.saatler.every(function (saat) {
+      var t = slotDurumu(s.tarih, saat).tur;
+      return t === 'secili' || t === 'musait';
+    });
+    if (!gecerli) {
+      durum.secim = { tarih: null, saatler: [] };
+      bildir('Seçtiğiniz saatlerden biri az önce doldu veya süresi geçti. Lütfen yeniden seçin.');
+    }
+  }
+
+  /* ---------------- Çizim ---------------- */
+
+  function ciz() {
+    var v = durum.veri;
+    if (!v) return;
+
+    $('kapasiteYazi').textContent = v.kapasite;
+    $('haftaYazi').textContent = tarihKisa(v.gunler[0]) + ' - ' + tarihUzun(v.gunler[4]);
+    $('oncekiBtn').disabled = v.gunler[4] < v.bugun;
+    $('sonrakiBtn').disabled = gunEkle(v.pazartesi, 7) > v.sonTarih;
+
+    var yonetici = !!durum.pin;
+    $('yoneticiBant').classList.toggle('hidden', !yonetici);
+    $('yoneticiBtnYazi').textContent = yonetici ? 'Yönetici (açık)' : 'Yönetici İşlemi';
+
+    // Mobil gün sekmeleri
+    var sekmeHtml = v.gunler.map(function (tarih, i) {
+      var musait = v.saatler.filter(function (saat) { return slotDurumu(tarih, saat).tur === 'musait'; }).length;
+      var aktif = i === durum.seciliGun;
+      var bugun = tarih === v.bugun;
+      return '<button type="button" data-gun="' + i + '" class="rounded-lg border px-1 py-2 text-center ' +
+        (aktif ? 'border-blue-700 bg-blue-700 text-white' : 'border-slate-200 bg-white text-slate-700') + '">' +
+        '<div class="text-xs font-semibold">' + GUN_KISA[i] + (bugun ? ' •' : '') + '</div>' +
+        '<div class="text-sm font-bold">' + tarihParcala(tarih).gun + '</div>' +
+        '<div class="text-[10px] ' + (aktif ? 'text-blue-100' : (musait ? 'text-emerald-600' : 'text-slate-400')) + '">' + musait + ' boş</div>' +
+        '</button>';
+    }).join('');
+    $('gunSekmeleri').innerHTML = sekmeHtml;
+
+    // Gün sütunları
+    var takvimHtml = v.gunler.map(function (tarih, i) {
+      var bugun = tarih === v.bugun;
+      var html = '<section class="' + (i === durum.seciliGun ? '' : 'hidden ') + 'md:block">' +
+        '<div class="mb-2 rounded-lg px-3 py-2 ' + (bugun ? 'bg-blue-100 text-blue-900' : 'bg-white text-slate-800') + ' shadow-sm">' +
+        '<div class="font-bold">' + GUN_ADLARI[i] + (bugun ? ' <span class="ml-1 rounded bg-blue-700 px-1.5 py-0.5 text-[10px] font-semibold text-white align-middle">BUGÜN</span>' : '') + '</div>' +
+        '<div class="text-xs text-slate-500">' + tarihUzun(tarih) + '</div></div>' +
+        '<div class="space-y-2">';
+
+      v.saatler.forEach(function (saat, j) {
+        if (j > 0 && bitis(v.saatler[j - 1]) !== baslangic(saat)) {
+          html += '<div class="flex items-center gap-2 py-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">' +
+            '<span class="h-px flex-1 bg-slate-300"></span>Öğle arası<span class="md:hidden lg:inline"> ' + bitis(v.saatler[j - 1]) + ' - ' + baslangic(saat) + '</span>' +
+            '<span class="h-px flex-1 bg-slate-300"></span></div>';
+        }
+        html += slotHtml(tarih, saat, yonetici);
+      });
+
+      return html + '</div></section>';
+    }).join('');
+    $('takvim').innerHTML = takvimHtml;
+
+    // Alt seçim çubuğu
+    var s = durum.secim;
+    if (s.tarih && s.saatler.length) {
+      var gi = v.gunler.indexOf(s.tarih);
+      var gunAdi = gi >= 0 ? GUN_ADLARI[gi] : '';
+      $('secimYazi').textContent = tarihKisa(s.tarih) + ' ' + gunAdi + ' · ' + secimAraligi(s.saatler) + ' (' + s.saatler.length + ' saat)';
+      $('secimCubugu').classList.remove('hidden');
+    } else {
+      $('secimCubugu').classList.add('hidden');
+    }
+  }
+
+  function slotHtml(tarih, saat, yonetici) {
+    var d = slotDurumu(tarih, saat);
+    var veri = 'data-tarih="' + tarih + '" data-saat="' + saat + '"';
+    var saatYazi = '<div class="text-base font-bold">' + baslangic(saat) + ' - ' + bitis(saat) + '</div>';
+
+    if (d.tur === 'dolu') {
+      var k = d.kayit;
+      var ic = '<div class="flex items-start justify-between gap-2">' + saatYazi +
+        '<span class="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">DOLU</span></div>' +
+        '<div class="mt-1 text-sm font-semibold text-red-900 break-words">' + kacis(k.kurum) + '</div>' +
+        '<div class="text-xs text-red-800/80 line-clamp-2 break-words">' + kacis(k.amac) + '</div>';
+      if (yonetici) {
+        ic += '<div class="mt-2 space-y-0.5 rounded-md bg-white/70 p-2 text-xs text-slate-700">' +
+          '<div><span class="text-slate-500">Ad Soyad:</span> ' + kacis(k.ad) + '</div>' +
+          '<div><span class="text-slate-500">Telefon:</span> <a class="text-blue-700 underline" href="tel:' + kacis(k.telefon) + '">' + kacis(k.telefon) + '</a></div>' +
+          '<div><span class="text-slate-500">Katılımcı:</span> ' + kacis(k.katilimci) + '</div>' +
+          '<div><span class="text-slate-500">Kayıt:</span> ' + kacis(k.kayitZamani) + '</div></div>' +
+          '<button type="button" data-iptal="' + kacis(k.kayitNo) + '" ' + veri + ' class="mt-2 w-full rounded-md bg-red-600 px-2 py-1.5 text-xs font-semibold text-white hover:bg-red-700">İptal Et / Boşalt</button>';
+        return '<div class="rounded-lg border-2 border-red-300 bg-red-50 p-3">' + ic + '</div>';
+      }
+      return '<button type="button" disabled aria-disabled="true" class="block w-full cursor-not-allowed rounded-lg border-2 border-red-300 bg-red-50 p-3 text-left">' + ic + '</button>';
+    }
+
+    if (d.tur === 'gecmis' || d.tur === 'kapali') {
+      return '<button type="button" disabled class="block w-full cursor-not-allowed rounded-lg border-2 border-slate-200 bg-slate-100 p-3 text-left text-slate-400">' +
+        saatYazi + '<div class="text-xs">' + (d.tur === 'gecmis' ? 'Süresi geçti' : 'Henüz rezervasyona açık değil') + '</div></button>';
+    }
+
+    if (d.tur === 'secili') {
+      return '<button type="button" data-slot ' + veri + ' class="block w-full rounded-lg border-2 border-blue-700 bg-blue-700 p-3 text-left text-white shadow">' +
+        '<div class="flex items-start justify-between gap-2">' + saatYazi +
+        '<svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>' +
+        '<div class="text-xs text-blue-100">Seçildi</div></button>';
+    }
+
+    return '<button type="button" data-slot ' + veri + ' class="block w-full rounded-lg border-2 border-emerald-400 bg-emerald-50 p-3 text-left text-emerald-900 transition hover:border-emerald-600 hover:bg-emerald-100">' +
+      saatYazi + '<div class="text-xs font-medium text-emerald-700">Müsait</div></button>';
+  }
+
+  /* ---------------- Seçim ---------------- */
+
+  function slotTikla(tarih, saat) {
+    var s = durum.secim;
+    if (s.tarih !== tarih || !s.saatler.length) {
+      durum.secim = { tarih: tarih, saatler: [saat] };
+      return ciz();
+    }
+
+    var indeks = s.saatler.indexOf(saat);
+    if (indeks >= 0) {
+      if (indeks === 0) s.saatler.shift();
+      else if (indeks === s.saatler.length - 1) s.saatler.pop();
+      else s.saatler = [saat];
+      if (!s.saatler.length) s.tarih = null;
+      return ciz();
+    }
+
+    var ilk = s.saatler[0];
+    var son = s.saatler[s.saatler.length - 1];
+    if (bitis(saat) === baslangic(ilk)) {
+      s.saatler.unshift(saat);
+    } else if (baslangic(saat) === bitis(son)) {
+      s.saatler.push(saat);
+    } else {
+      durum.secim = { tarih: tarih, saatler: [saat] };
+      bildir('Yalnızca ardışık saatler birlikte seçilebilir. Yeni seçim başlatıldı.');
+    }
+    ciz();
+  }
+
+  /* ---------------- Form ---------------- */
+
+  function formuAc() {
+    var s = durum.secim;
+    if (!s.tarih || !s.saatler.length) return;
+    var gi = durum.veri.gunler.indexOf(s.tarih);
+    $('formOzet').textContent = tarihUzun(s.tarih, gi >= 0 ? gi : undefined) + ' · ' + secimAraligi(s.saatler) + ' (' + s.saatler.length + ' saat)';
+    $('fKatilimci').max = durum.veri.kapasite;
+    $('kapasiteNot').textContent = 'En fazla ' + durum.veri.kapasite + ' kişi.';
+    $('formHata').classList.add('hidden');
+    $('formGonderBtn').disabled = false;
+    $('formGonderBtn').textContent = 'Rezervasyonu Onayla';
+    modalAc('formModal');
+    setTimeout(function () { $('fAd').focus(); }, 50);
+  }
+
+  function formHatasi(metin) {
+    $('formHata').textContent = metin;
+    $('formHata').classList.remove('hidden');
+  }
+
+  function formGonder(e) {
+    e.preventDefault();
+    var veri = {
+      tarih: durum.secim.tarih,
+      saatler: durum.secim.saatler.slice(),
+      ad: $('fAd').value.trim(),
+      kurum: $('fKurum').value.trim(),
+      telefon: $('fTelefon').value.trim(),
+      amac: $('fAmac').value.trim(),
+      katilimci: Number($('fKatilimci').value)
+    };
+
+    if (veri.ad.length < 3) return formHatasi('Lütfen ad soyad girin.');
+    if (veri.kurum.length < 2) return formHatasi('Lütfen okul / kurum adını girin.');
+    var rakam = veri.telefon.replace(/\D/g, '');
+    if (rakam.length < 10 || rakam.length > 13) return formHatasi('Lütfen geçerli bir telefon numarası girin (örn. 05xx xxx xx xx).');
+    if (veri.amac.length < 3) return formHatasi('Lütfen kullanım amacını / eğitim konusunu girin.');
+    if (!Number.isInteger(veri.katilimci) || veri.katilimci < 1) return formHatasi('Katılımcı sayısı en az 1 olmalıdır.');
+    if (veri.katilimci > durum.veri.kapasite) return formHatasi('Katılımcı sayısı sınıf kapasitesini (' + durum.veri.kapasite + ' kişi) aşamaz.');
+
+    $('formHata').classList.add('hidden');
+    $('formGonderBtn').disabled = true;
+    $('formGonderBtn').textContent = 'Kaydediliyor...';
+
+    sunucu('rezervasyonYap', veri)
+      .then(function (sonuc) {
+        if (sonuc.ok) {
+          modalKapat('formModal');
+          $('kayitFormu').reset();
+          durum.secim = { tarih: null, saatler: [] };
+          var gi = durum.veri.gunler.indexOf(sonuc.tarih);
+          bilgiGoster({
+            ikon: 'basari',
+            baslik: 'Rezervasyonunuz alındı',
+            metinHtml: '<p><strong>' + kacis(tarihUzun(sonuc.tarih, gi >= 0 ? gi : undefined)) + '</strong><br>' +
+              kacis(secimAraligi(sonuc.saatler)) + ' (' + sonuc.saatler.length + ' saat)</p>' +
+              '<p class="mt-2">' + kacis(sonuc.kurum) + '</p>' +
+              '<p class="mt-2 text-xs text-slate-500">Kayıt numarası: ' + kacis(sonuc.grupNo) + '</p>'
+          });
+          return yukle(durum.pazartesi, true);
+        }
+        if (sonuc.doldu) {
+          modalKapat('formModal');
+          durum.secim = { tarih: null, saatler: [] };
+          bilgiGoster({ ikon: 'hata', baslik: 'Bu saat aralığı az önce doldu', metin: sonuc.mesaj });
+          return yukle(durum.pazartesi, true);
+        }
+        formHatasi(sonuc.mesaj || 'Kayıt yapılamadı.');
+      })
+      .catch(function (hata) {
+        formHatasi('Bağlantı hatası: ' + (hata && hata.message ? hata.message : hata) + '. Lütfen tekrar deneyin.');
+      })
+      .then(function () {
+        $('formGonderBtn').disabled = false;
+        $('formGonderBtn').textContent = 'Rezervasyonu Onayla';
+      });
+  }
+
+  /* ---------------- Yönetici ---------------- */
+
+  function pinGonder(e) {
+    e.preventDefault();
+    var pin = $('pinGirdi').value.trim();
+    if (!pin) return;
+    $('pinGonderBtn').disabled = true;
+    sunucu('yoneticiGiris', pin)
+      .then(function (sonuc) {
+        if (sonuc.ok) {
+          durum.pin = pin;
+          modalKapat('pinModal');
+          bildir('Yönetici modu açıldı.');
+          return yukle(durum.pazartesi);
+        }
+        $('pinHata').textContent = sonuc.mesaj;
+        $('pinHata').classList.remove('hidden');
+      })
+      .catch(function (hata) {
+        $('pinHata').textContent = 'Bağlantı hatası: ' + (hata && hata.message ? hata.message : hata);
+        $('pinHata').classList.remove('hidden');
+      })
+      .then(function () { $('pinGonderBtn').disabled = false; });
+  }
+
+  function iptalSor(kayitNo, tarih, saat) {
+    var k = durum.veri.kayitlar[tarih + '|' + saat] || {};
+    bilgiGoster({
+      ikon: 'soru',
+      baslik: 'Rezervasyon iptal edilsin mi?',
+      metinHtml: '<p><strong>' + kacis(tarihUzun(tarih)) + ' · ' + kacis(saat) + '</strong></p><p class="mt-1">' + kacis(k.kurum) + '</p>' +
+        '<p class="mt-2">Bu saat tekrar "Müsait" duruma gelecek. Kayıt tabloda "İptal" olarak işaretlenir.</p>',
+      tamamYazi: 'İptal Et / Boşalt',
+      tehlikeli: true,
+      onay: function () {
+        sunucu('rezervasyonIptal', durum.pin, kayitNo)
+          .then(function (sonuc) {
+            if (sonuc.ok) bildir('Rezervasyon iptal edildi, saat tekrar müsait.');
+            else bildir(sonuc.mesaj || 'İptal edilemedi.');
+            return yukle(durum.pazartesi, true);
+          })
+          .catch(function (hata) { bildir('Bağlantı hatası: ' + (hata && hata.message ? hata.message : hata)); });
+      }
+    });
+  }
+
+  function csvIndir() {
+    sunucu('csvOlustur', durum.pin)
+      .then(function (sonuc) {
+        if (!sonuc.ok) return bildir(sonuc.mesaj || 'Dosya oluşturulamadı.');
+        var blob = new Blob(['﻿' + sonuc.csv], { type: 'text/csv;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = sonuc.dosyaAdi;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      })
+      .catch(function (hata) { bildir('Bağlantı hatası: ' + (hata && hata.message ? hata.message : hata)); });
+  }
+
+  /* ---------------- Olaylar ---------------- */
+
+  $('takvim').addEventListener('click', function (e) {
+    var iptal = e.target.closest('[data-iptal]');
+    if (iptal) return iptalSor(iptal.getAttribute('data-iptal'), iptal.getAttribute('data-tarih'), iptal.getAttribute('data-saat'));
+    var slot = e.target.closest('[data-slot]');
+    if (slot && !slot.disabled) slotTikla(slot.getAttribute('data-tarih'), slot.getAttribute('data-saat'));
+  });
+
+  $('gunSekmeleri').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-gun]');
+    if (!b) return;
+    durum.seciliGun = Number(b.getAttribute('data-gun'));
+    ciz();
+  });
+
+  $('oncekiBtn').addEventListener('click', function () { yukle(gunEkle(durum.pazartesi, -7)); });
+  $('sonrakiBtn').addEventListener('click', function () { yukle(gunEkle(durum.pazartesi, 7)); });
+  $('buHaftaBtn').addEventListener('click', function () { yukle(''); });
+
+  $('temizleBtn').addEventListener('click', function () { durum.secim = { tarih: null, saatler: [] }; ciz(); });
+  $('devamBtn').addEventListener('click', formuAc);
+  $('kayitFormu').addEventListener('submit', formGonder);
+  $('formIptalBtn').addEventListener('click', function () { modalKapat('formModal'); });
+
+  $('yoneticiBtn').addEventListener('click', function () {
+    if (durum.pin) return;
+    $('pinGirdi').value = '';
+    $('pinHata').classList.add('hidden');
+    modalAc('pinModal');
+    setTimeout(function () { $('pinGirdi').focus(); }, 50);
+  });
+  $('pinFormu').addEventListener('submit', pinGonder);
+  $('pinIptalBtn').addEventListener('click', function () { modalKapat('pinModal'); });
+  $('cikisBtn').addEventListener('click', function () {
+    durum.pin = null;
+    bildir('Yönetici modundan çıkıldı.');
+    yukle(durum.pazartesi);
+  });
+  $('csvBtn').addEventListener('click', csvIndir);
+
+  $('bilgiTamamBtn').addEventListener('click', function () {
+    var onay = bilgiOnay;
+    bilgiOnay = null;
+    modalKapat('bilgiModal');
+    if (onay) onay();
+  });
+  $('bilgiIkinciBtn').addEventListener('click', function () { bilgiOnay = null; modalKapat('bilgiModal'); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    ['bilgiModal', 'pinModal', 'formModal'].some(function (id) {
+      if (!$(id).classList.contains('hidden')) { modalKapat(id); bilgiOnay = null; return true; }
+      return false;
+    });
+  });
+
+  // Otomatik yenileme: başka cihazlardan yapılan kayıtlar ekrana yansısın.
+  setInterval(function () {
+    if (!document.hidden && !modalAcikMi()) yukle(durum.pazartesi, true);
+  }, YENILEME_MS);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && durum.veri && !modalAcikMi()) yukle(durum.pazartesi, true);
+  });
+
+  /* ---------------- Demo modu (yalnızca Apps Script dışında) ---------------- */
+
+  var demoSunucu = (function () {
+    var SAATLER = ['09:00-10:00', '10:00-11:00', '11:00-12:00', '13:00-14:00', '14:00-15:00', '15:00-16:00', '16:00-17:00'];
+    var PIN = '1234';
+    var KAPASITE = 30;
+    var ANAHTAR = 'canvaSinifiDemoKayitlari';
+
+    function oku() { try { return JSON.parse(localStorage.getItem(ANAHTAR) || '[]'); } catch (e) { return []; } }
+    function yaz(k) { try { localStorage.setItem(ANAHTAR, JSON.stringify(k)); } catch (e) { /* yok say */ } }
+    function simdi() {
+      var p = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+        .formatToParts(new Date()).reduce(function (o, x) { o[x.type] = x.value; return o; }, {});
+      return { tarih: p.year + '-' + p.month + '-' + p.day, saat: p.hour + ':' + p.minute };
+    }
+    function haftaGunu(t) { var p = tarihParcala(t); return new Date(Date.UTC(p.yil, p.ay - 1, p.gun)).getUTCDay(); }
+    function pazartesi(t) { var g = haftaGunu(t); return gunEkle(t, g === 0 ? -6 : 1 - g); }
+
+    return {
+      haftayiGetir: function (pzt, pin) {
+        var s = simdi();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(pzt || '')) {
+          var g = haftaGunu(s.tarih);
+          pzt = g === 6 ? gunEkle(s.tarih, 2) : g === 0 ? gunEkle(s.tarih, 1) : pazartesi(s.tarih);
+        } else {
+          pzt = pazartesi(pzt);
+        }
+        var gunler = [0, 1, 2, 3, 4].map(function (i) { return gunEkle(pzt, i); });
+        var yonetici = pin === PIN;
+        var kayitlar = {};
+        oku().forEach(function (k) {
+          if (k.durum !== 'Aktif' || gunler.indexOf(k.tarih) < 0) return;
+          var b = { kayitNo: k.kayitNo, kurum: k.kurum, amac: k.amac };
+          if (yonetici) { b.ad = k.ad; b.telefon = k.telefon; b.katilimci = k.katilimci; b.kayitZamani = k.kayitZamani; }
+          kayitlar[k.tarih + '|' + k.saat] = b;
+        });
+        return { pazartesi: pzt, gunler: gunler, saatler: SAATLER, bugun: s.tarih, simdiSaat: s.saat, sonTarih: gunEkle(s.tarih, 90), kapasite: KAPASITE, kayitlar: kayitlar, yonetici: yonetici };
+      },
+      rezervasyonYap: function (v) {
+        var liste = oku();
+        var cakisan = v.saatler.filter(function (saat) {
+          return liste.some(function (k) { return k.durum === 'Aktif' && k.tarih === v.tarih && k.saat === saat; });
+        });
+        if (cakisan.length) return { ok: false, doldu: true, cakisan: cakisan, mesaj: 'Bu saat aralığı az önce doldu (' + cakisan.join(', ') + '). Lütfen başka bir saat seçin.' };
+        var grupNo = 'DEMO-' + Date.now().toString(36).toUpperCase();
+        v.saatler.forEach(function (saat) {
+          liste.push({ kayitNo: Math.random().toString(36).slice(2, 12).toUpperCase(), grupNo: grupNo, tarih: v.tarih, saat: saat, ad: v.ad, kurum: v.kurum, telefon: v.telefon.replace(/\D/g, ''), amac: v.amac, katilimci: v.katilimci, kayitZamani: new Date().toLocaleString('tr-TR'), durum: 'Aktif' });
+        });
+        yaz(liste);
+        return { ok: true, grupNo: grupNo, tarih: v.tarih, saatler: v.saatler, kurum: v.kurum };
+      },
+      yoneticiGiris: function (pin) { return pin === PIN ? { ok: true } : { ok: false, mesaj: 'PIN kodu hatalı.' }; },
+      rezervasyonIptal: function (pin, kayitNo) {
+        if (pin !== PIN) return { ok: false, mesaj: 'PIN kodu hatalı.' };
+        var liste = oku();
+        liste.forEach(function (k) { if (k.kayitNo === kayitNo) k.durum = 'İptal'; });
+        yaz(liste);
+        return { ok: true };
+      },
+      csvOlustur: function (pin) {
+        if (pin !== PIN) return { ok: false, mesaj: 'PIN kodu hatalı.' };
+        var satirlar = [['Kayıt No', 'Grup No', 'Tarih', 'Saat', 'Ad Soyad', 'Okul / Kurum', 'Telefon', 'Kullanım Amacı / Eğitim Konusu', 'Katılımcı Sayısı', 'Kayıt Zamanı', 'Durum']]
+          .concat(oku().map(function (k) { return [k.kayitNo, k.grupNo, k.tarih, k.saat, k.ad, k.kurum, k.telefon, k.amac, k.katilimci, k.kayitZamani, k.durum]; }));
+        var csv = satirlar.map(function (r) { return r.map(function (h) { return '"' + String(h).replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
+        return { ok: true, csv: csv, dosyaAdi: 'canva-sinifi-demo.csv' };
+      }
+    };
+  })();
+
+  /* ---------------- Başlat ---------------- */
+
+  if (DEMO) $('demoUyari').classList.remove('hidden');
+  yukle('');
+})();
+</script>
+</body>
+</html>
